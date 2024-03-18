@@ -1,7 +1,5 @@
 import express from "express";
 
-const app = express();
-const PORT = 3000;
 const USERS = [
     { id : 1, username : "nilesh", displayName : "Nilesh Gautam"},
     { id : 2, username : "aman", displayName : "Aman Kumar"},
@@ -10,6 +8,13 @@ const USERS = [
     { id : 5, username : "sandeep", displayName : "Sandeep Bera"},
 ];
 
+const PORT = 3000;
+
+
+const app = express();
+
+app.use(express.json());
+
 app.get("/", (req, res)=>{
     res.status(201).send(USERS[0]);
 });
@@ -17,12 +22,20 @@ app.get("/", (req, res)=>{
 app.get("/api/users", (req, res)=>{
     console.log(req.query);
     const {query : {filter, value}} = req;
-    if(!filter && !value) return req.status(200).send(USERS);
+    if(!filter && !value) return res.status(200).send(USERS);
     if(filter && value) return res.status(200).send(
         USERS.filter((user) => user[filter].includes(value))
     )
     res.status(400).send({Error : "Bad Request!"});
 });
+
+app.post("/api/users", (req, res) => {
+    console.log(req.body);
+    const { body } = req;
+    const newUser = { id : USERS[USERS.length -1].id + 1, ...body };
+    USERS.push(newUser);
+    res.status(201).send(newUser);
+})
 
 app.get("/api/users/:id", (req, res)=>{
     console.log(req.params);
