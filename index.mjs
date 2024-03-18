@@ -48,6 +48,16 @@ app.get("/api/users/:id", (req, res)=>{
     return res.status(200).send(findUser);
 });
 
+app.put("/api/users/:id", (req, res) => {
+    const { body, params : { id }} = req;
+    const parsedId = parseInt(id);
+    if(isNaN(parsedId)) return res.sendStatus(400);
+    const userIndex = USERS.findIndex((user) => user.id === parsedId);
+    if(userIndex == -1) return res.sendStatus(404);
+    USERS[userIndex] = { id : parsedId, ...body };
+    res.sendStatus(200);
+})
+
 app.get("/api/products", (req, res)=>{
     res.status(200).send({ id : "1", name : "Chicken Breast", price : "10.99"});
 });
