@@ -6,6 +6,8 @@ const USERS = [
     { id : 3, username : "ankur", displayName : "Ankur Gautam"},
     { id : 4, username : "manish", displayName : "Manish Kumar"},
     { id : 5, username : "sandeep", displayName : "Sandeep Bera"},
+    { id : 6, username : "kunal", displayName : "Kunal Pasi"},
+    { id : 7, username : "shubham", displayName : "Shubham Singh"},
 ];
 
 const PORT = 3000;
@@ -65,6 +67,16 @@ app.patch("/api/users/:id", (req, res) => {
     const userIndex = USERS.findIndex((user) => user.id === parsedId);
     if(userIndex == -1) return res.sendStatus(404);
     USERS[userIndex] = { ...USERS[userIndex], ...body };
+    res.sendStatus(200);
+})
+
+app.delete("/api/users/:id", (req, res) => {
+    const { params : { id }} = req;
+    const parsedId = parseInt(id);
+    if(isNaN(parsedId)) return res.sendStatus(400); 
+    const userIndex = USERS.findIndex((user) => user.id === parsedId);
+    if(userIndex == -1) return res.sendStatus(404);
+    USERS.splice(userIndex, 1);
     res.sendStatus(200);
 })
 
