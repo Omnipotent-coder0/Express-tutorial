@@ -5,13 +5,14 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import passport from "passport";
 import "./strategies/local-strategy.mjs";
+import "dotenv/config";
+import mongoose from "mongoose";
 
 const PORT = 3000;
 
 const app = express();
 
 app.use(express.json());
-app.use(cookieParser("secret"));
 app.use(
   session({
     secret: "session secret",
@@ -35,7 +36,6 @@ app.post("/api/auth", passport.authenticate("local"), (req, res) => {
 app.get("/api/auth/status", (req, res) => {
   console.log("Inside /auth/status end point !!");
   console.log(req.user);
-  console.log("hello hello !!!");
   return req.user
     ? res.status(200).send(req.user)
     : res.status(401).send({ message: "You are not authorized!!" });
@@ -50,6 +50,14 @@ app.post("/api/auth/logout", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port : ${PORT}`);
-});
+mongoose
+  .connect(process.env.DB_URL)
+  .then(() => {
+    console.log(`Server is succesfully connected to the database!`);
+    app.listen(PORT, () => {
+      console.log(`Server is running on port : ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.log(`Error : ${error}`);
+  });

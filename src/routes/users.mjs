@@ -8,63 +8,56 @@ import {
 import { USERS } from "../utils/constants.mjs";
 import { userValidationSchema } from "../utils/validationSchemas.mjs";
 import { resolveUserById } from "../utils/middlewares.mjs";
+import { User } from "../mongoose/schemas/user.mjs";
 
 const router = Router();
 
-router.get(
+router.get("/api/users", (req, res) => {
+  try {
+    res.status(200).send(USERS);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ error: error });
+  }
+});
+
+router.post(
   "/api/users",
-  query("filter")
-    .isString()
-    .withMessage("Must be a String")
-    .notEmpty()
-    .withMessage("Must not be Empty")
-    .isLength({ min: 3, max: 10 })
-    .withMessage("Must be between 3-10 characters"),
-  (req, res) => {
-    console.log(req.session);
-    console.log(req.session.id);
-    req.sessionStore.get(req.session.id, (error, sessionData) =>{
-      if(error){
-        console.log(error);
-        throw error;
-      }
-      console.log(sessionData);
-    });
-    const results = validationResult(req);
-    console.log(results);
-    const {
-      query: { filter, value },
-    } = req;
-    if (!filter && !value) return res.status(200).send(USERS);
-    if (filter && value)
-      return res
-        .status(200)
-        .send(USERS.filter((user) => user[filter].includes(value)));
-    res.status(400).send({ Error: "Bad Request!" });
+  checkSchema(userValidationSchema),
+  async (req, res) => {
+    const result = validationResult(req);
+    console.log(result);
+    if (!result.isEmpty())
+      return res.status(400).send({ error: result.array() });
+    const data = matchedData(req);
+    try {
+      // const newUser = new User(data);
+      // const saveUser = await newUser.save();
+      //  or  //
+      const savedUser = await User.create(data);
+      res.status(201).send(savedUser);
+    } catch (error) {
+      console.log(error);
+      res.status(400).send({ error: error });
+    }
   }
 );
-
-router.post("/api/users", checkSchema(userValidationSchema), (req, res) => {
-  const result = validationResult(req);
-  console.log(result);
-  if (!result.isEmpty()) return res.status(400).send({ error: result.array() });
-  const data = matchedData(req);
-  console.log(data);
-  const newUser = { id: USERS[USERS.length - 1].id + 1, ...data };
-  USERS.push(newUser);
-  res.status(201).send(newUser);
-});
 
 router.get("/api/users/:id", resolveUserById, (req, res) => {
   const { userIndex } = req;
   return res.status(200).send(USERS[userIndex]);
 });
 
-router.put("/api/users/:id",checkSchema(userValidationSchema), resolveUserById, (req, res) => {
-  const { body, userIndex } = req;
-  USERS[userIndex] = { id: USERS[userIndex].id, ...body };
-  res.sendStatus(200);
-});
+router.put(
+  "/api/users/:id",
+  checkSchema(userValidationSchema),
+  resolveUserById,
+  (req, res) => {
+    const { body, userIndex } = req;
+    USERS[userIndex] = { id: USERS[userIndex].id, ...body };
+    res.sendStatus(200);
+  }
+);
 
 router.patch("/api/users/:id", resolveUserById, (req, res) => {
   const { body, userIndex } = req;
