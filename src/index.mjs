@@ -3,6 +3,8 @@ import { USERS } from "./utils/constants.mjs";
 import routes from "./routes/index.mjs";
 import cookieParser from "cookie-parser";
 import session from "express-session";
+import passport from "passport";
+import "./strategies/local-strategy.mjs";
 
 const PORT = 3000;
 
@@ -20,52 +22,33 @@ app.use(
     },
   })
 );
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(routes);
 
-app.get("/", (req, res) => {
-  console.log(req.session);
-  console.log(req.session.id);
-  req.session.visited = true;
-  res.cookie("hello", "world", { maxAge: 60000 * 60, signed: true });
-  res.status(201).send(USERS[0]);
+app.post("/api/auth", passport.authenticate("local"), (req, res) => {
+  res.sendStatus(200);
 });
 
-app.post("/api/auth", (req, res) => {
-  const {
-    body: { username, password },
-  } = req;
-  const findUser = USERS.find((user) => user.username === username);
-  if (!findUser || findUser.password != password)
-    return res
-      .status(401)
-      .send({ message: "Invalid username or incorrect password" });
-  console.log(req.session.id);
-  req.session.user = findUser;
-  return res.status(200).send(findUser);
+app.get("/api/auth/status", (req, res) => {
+  console.log("Inside /auth/status end point !!");
+  console.log(req.user);
+  console.log("hello hello !!!");
+  return req.user
+    ? res.status(200).send(req.user)
+    : res.status(401).send({ message: "You are not authorized!!" });
 });
 
-app.use("/api/auth/status", (req, res) => {
-  return req.session.user
-    ? res
-        .status(200)
-        .send({ message: "user is authenticated", ...req.session.user })
-    : res.status(400).send({ message: "You are not authenticated" });
+app.post("/api/auth/logout", (req, res) => {
+  console.log("Inside Logout endpoint !!");
+  if (!req.user) return res.sendStatus(400);
+  req.logout((error) => {
+    if (error) return res.status(400).send({ error: error });
+    return res.sendStatus(200);
+  });
 });
-
-app.get("/api/cart", (req, res) => {
-  if(!req.session.user) return res.status(400).send({ message : "user is not authenticated" });
-  if(req.session.cart)
-    return res.status(200).send(req.session.cart);
-  return res.status(200).send([]);
-})
-
-app.post("/api/cart", (req, res) => {
-  if(!req.session.user) return res.status(400).send({ message : "user is not authenticated" });
-  const { body : item, session :{cart} } = req;
-  if(!cart) req.session.cart = [item];
-  else  cart.push(item);
-  return res.status(201).send(item);
-})
 
 app.listen(PORT, () => {
   console.log(`Server is running on port : ${PORT}`);
