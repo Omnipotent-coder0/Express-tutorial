@@ -21,6 +21,15 @@ router.get(
     .isLength({ min: 3, max: 10 })
     .withMessage("Must be between 3-10 characters"),
   (req, res) => {
+    console.log(req.session);
+    console.log(req.session.id);
+    req.sessionStore.get(req.session.id, (error, sessionData) =>{
+      if(error){
+        console.log(error);
+        throw error;
+      }
+      console.log(sessionData);
+    });
     const results = validationResult(req);
     console.log(results);
     const {
